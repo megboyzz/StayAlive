@@ -1,14 +1,37 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using System.Collections.Generic;
+using System.IO;
+using Unity.VisualScripting;
+using Random = System.Random;
 
+/// <summary>
+/// Класс, отвечающий за мотоцикл и его движение
+/// </summary>
 public class MyBikeControll : MonoBehaviour{
+    /// <summary>
+    ///     Активное ли упрааление или нет
+    /// </summary>
     public bool activeControl = false;
+    
+    public string wayAIFile = "";
 
+    private bool isPause = false;
 
+    public bool isAI = false;
+    private StreamWriter writer;
+    private StreamReader reader;
+
+    /// <summary>
+    ///  Колеса мотоцикла
+    /// </summary>
     public BikeWheels bikeWheels;
 
 
+    /// <summary>
+    ///  Класс для представления колес мотоцикла 
+    /// </summary>
     [System.Serializable]
     public class BikeWheels{
         public ConnectWheel wheels;
@@ -16,6 +39,9 @@ public class MyBikeControll : MonoBehaviour{
     }
 
 
+    /// <summary>
+    ///  Класс для представления подключенных колес
+    /// </summary>
     [System.Serializable]
     public class ConnectWheel{
         public Transform wheelFront;
@@ -25,7 +51,9 @@ public class MyBikeControll : MonoBehaviour{
         public Transform AxleBack;
     }
 
-
+    /// <summary>
+    ///  Класс для представления настроек колеса
+    /// </summary>
     [System.Serializable]
     public class WheelSetting{
         public float Radius = 0.3f;
@@ -33,49 +61,129 @@ public class MyBikeControll : MonoBehaviour{
         public float Distance = 0.2f;
     }
 
+    /// <summary>
+    ///  Эксзепляр настройки байка
+    /// </summary>
     public BikeSetting bikeSetting;
 
+    /// <summary>
+    ///  Класс для представления настроек байка
+    /// </summary>
     [System.Serializable]
     public class BikeSetting{
+        /// <summary>
+        /// Показывать ли обычные гизмо (отображение графической информации) при работе скрипта.
+        /// </summary>
         public bool showNormalGizmos = false;
 
+        /// <summary>
+        /// Список трансформов для переключения камеры.
+        /// </summary>
         public List<Transform> cameraSwitchView;
 
-
+        /// <summary>
+        /// Основное тело (корпус) мотоцикла.
+        /// </summary>
         public Transform MainBody;
+
+        /// <summary>
+        /// Руль мотоцикла.
+        /// </summary>
         public Transform bikeSteer;
 
-
+        /// <summary>
+        /// Максимальный угол уилли (балансировки на заднем колесе).
+        /// </summary>
         public float maxWheelie = 40.0f;
+
+        /// <summary>
+        /// Скорость уилли.
+        /// </summary>
         public float speedWheelie = 30.0f;
 
+        /// <summary>
+        /// Скольжение тормозов.
+        /// </summary>
         public float slipBrake = 3.0f;
 
-
+        /// <summary>
+        /// Жесткость пружин.
+        /// </summary>
         public float springs = 35000.0f;
+
+        /// <summary>
+        /// Амортизация.
+        /// </summary>
         public float dampers = 4000.0f;
 
+        /// <summary>
+        /// Мощность мотоцикла.
+        /// </summary>
         public float bikePower = 120;
+
+        /// <summary>
+        /// Мощность переключения передач.
+        /// </summary>
         public float shiftPower = 150;
+
+        /// <summary>
+        /// Мощность торможения.
+        /// </summary>
         public float brakePower = 8000;
 
+        /// <summary>
+        /// Центр масс для переключения передач.
+        /// </summary>
         public Vector3 shiftCentre = new Vector3(0.0f, -0.6f, 0.0f);
 
+        /// <summary>
+        /// Максимальный угол поворота руля.
+        /// </summary>
         public float maxSteerAngle = 30.0f;
+
+        /// <summary>
+        /// Максимальный угол поворота при развороте.
+        /// </summary>
         public float maxTurn = 1.5f;
 
+        /// <summary>
+        /// Число оборотов двигателя при переключении на более низкую передачу.
+        /// </summary>
         public float shiftDownRPM = 1500.0f;
+
+        /// <summary>
+        /// Число оборотов двигателя при переключении на более высокую передачу.
+        /// </summary>
         public float shiftUpRPM = 4000.0f;
+
+        /// <summary>
+        /// Обороты холостого хода двигателя.
+        /// </summary>
         public float idleRPM = 700.0f;
 
+        /// <summary>
+        /// Жесткость контакта с землей.
+        /// </summary>
         public float stiffness = 1.0f;
 
-
+        /// <summary>
+        /// Автоматический выбор передач.
+        /// </summary>
         public bool automaticGear = true;
 
+        /// <summary>
+        /// Список передач с коэффициентами.
+        /// </summary>
         public float[] gears = { -10f, 9f, 6f, 4.5f, 3f, 2.5f };
-
+        
+        /// <summary>
+        /// Лимит на скорость бэквардов
+        /// </summary>
         public float LimitBackwardSpeed = 60.0f;
+        
+        /// <summary>
+        /// Лимит на скорость бэквардов
+        /// </summary>
         public float LimitForwardSpeed = 220.0f;
     }
 
@@ -316,14 +424,28 @@ public class MyBikeControll : MonoBehaviour{
             shiftTime = 2.0f;
         }
     }
-    
-    
-    
+
+    private void Start()
+    {
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = Time.timeScale * 0.02f;
+
+        if (wayAIFile == "")
+        {
+            Debug.Log("way file is null!");
+            return;
+        }
+        
+        if(wayAIFile != "" && !isAI)
+            writer = new StreamWriter(wayAIFile, false);
+
+        if (isAI && wayAIFile != "")
+            reader = new StreamReader(wayAIFile);
+
+    }
+
     void Update()
     {
-
-        
-        
         if (activeControl)
         {
             if (!bikeSetting.automaticGear)
@@ -385,7 +507,14 @@ public class MyBikeControll : MonoBehaviour{
     {
         speed = myRigidbody.velocity.magnitude * 2.7f;
 
-
+        isPause = Input.GetKey(KeyCode.Escape);
+        
+        if (isPause)
+        {
+            Debug.Log("is Pause pressed");
+            
+        }
+        
         if (crash)
         {
             myRigidbody.constraints = RigidbodyConstraints.None;
@@ -405,10 +534,14 @@ public class MyBikeControll : MonoBehaviour{
 
             if (!crash)
             {
+            
                 steer = Mathf.MoveTowards(steer, Input.GetAxis("Horizontal"), 0.1f);
                 accel = Input.GetAxis("Vertical");
                 brake = Input.GetButton("Jump");
                 shift = Input.GetKey(KeyCode.LeftShift) | Input.GetKey(KeyCode.RightShift);
+                
+                if(wayAIFile != "")
+                    writer.WriteLine("{0} {1}", accel, steer);
             }
             else
             {
@@ -417,10 +550,28 @@ public class MyBikeControll : MonoBehaviour{
         }
         else
         {
-            accel = 0.0f;
-            steer = 0.0f;
-            shift = false;
-            brake = false;
+
+            if (isAI)
+            {
+                Random rnd = new Random();
+                
+                var paramz = reader.ReadLine();
+                
+                
+                var arr = paramz.Split(" ");
+
+                steer = Mathf.MoveTowards(steer, float.Parse(arr[1]), 0.1f);
+                accel = float.Parse(arr[0]);
+                brake = false;
+                shift = false;
+            }
+            else
+            {
+                accel = 0.0f;
+                steer = 0.0f;
+                shift = false;
+                brake = false;
+            }
         }
 
         if (bikeSetting.automaticGear && (currentGear == 1) && (accel < 0.0f))

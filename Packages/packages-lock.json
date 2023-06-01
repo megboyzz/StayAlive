@@ -67,6 +67,14 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.recorder": {
+      "version": "file:D:/com.unity.recorder-2.5.5",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.timeline": "1.0.0"
+      }
+    },
     "com.unity.settings-manager": {
       "version": "1.0.3",
       "depth": 2,
