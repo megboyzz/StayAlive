@@ -19,6 +19,8 @@ public class MyBikeControll : MonoBehaviour{
 
     private bool isPause = false;
 
+    public GameObject fire;
+
     public bool isAI = false;
     private StreamWriter writer;
     private StreamReader reader;
@@ -503,17 +505,19 @@ public class MyBikeControll : MonoBehaviour{
         }
     }
 
+    void Kill()
+    {
+        crash = true;
+        Instantiate(fire, transform);
+    }
+
     void FixedUpdate()
     {
         speed = myRigidbody.velocity.magnitude * 2.7f;
 
         isPause = Input.GetKey(KeyCode.Escape);
         
-        if (isPause)
-        {
-            Debug.Log("is Pause pressed");
-            
-        }
+        if(Input.GetKey(KeyCode.K)) Kill();
         
         if (crash)
         {

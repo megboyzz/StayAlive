@@ -18,14 +18,15 @@ public class DeadlineBehavior : MonoBehaviour {
     /// </summary>
     public GameObject motobike;
     
+    private float timer = 0f;
+    private float eventFrequency = 2f; // Частота события в секундах
+    
     /// <summary>
     ///  Метод тика который вызвается каждый тик
     /// в нем создается линия 
     /// </summary>
     private void Update()
     {
-        //Instantiate(deadline, motobike.transform.position, Quaternion.identity);
-        
         
     }
 
